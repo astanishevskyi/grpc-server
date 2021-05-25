@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package user;
+option go_package = "github.com/astanishevskyi/grpc-server/pkg/api";
+
+service User {
+    rpc Do(UserId) returns (UserObject) {}
+}
+
+message UserId {
+    string id = 1;
+}
+
+message UserObject {
+    string name = 1;
+}
