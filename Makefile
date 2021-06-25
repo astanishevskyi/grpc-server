@@ -8,4 +8,4 @@ run:
 build-container:
 	docker build -t grpc-server .
 up:
-	docker run grpc-server ./main $(config)
+	docker run -p 50051:50051 grpc-server ./main $(config)
