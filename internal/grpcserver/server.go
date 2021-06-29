@@ -21,18 +21,26 @@ type Server struct {
 func New(config *configs.Config) *Server {
 	s := &Server{
 		GRPCServer: grpc.NewServer(),
-		Storage:    storage.NewInMemoryUserStorage(),
 		config:     config,
+	}
+	if err := s.ConfigStorage(); err != nil {
+		log.Fatal(err)
 	}
 	pb.RegisterUserServer(s.GRPCServer, &services.UserServer{DB: s.Storage})
 	return s
 }
 
 func (s *Server) ConfigStorage() error {
-	if s.config.Storage == "in-memory" {
+	switch s.config.Storage {
+	case "", "in-memory":
 		log.Println("Storage is in-memory")
 		inMemoryStorage := storage.NewInMemoryUserStorage()
 		s.Storage = inMemoryStorage
+		return nil
+	case "redis":
+		log.Println("Storage is redis")
+		redisStorage := storage.NewRedisStorage()
+		s.Storage = redisStorage
 		return nil
 	}
 	return errors.New("no storage is set")
