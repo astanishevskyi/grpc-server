@@ -17,12 +17,12 @@ func NewInMemoryUserStorage() *UserStorage {
 	return &storage
 }
 
-func (s *UserStorage) GetAll() []models.User {
+func (s *UserStorage) GetAll() ([]models.User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	copyUserSlice := make([]models.User, len(s.UsersSlice))
 	copy(copyUserSlice, s.UsersSlice)
-	return copyUserSlice
+	return copyUserSlice, nil
 }
 
 func (s *UserStorage) Retrieve(id uint32) (models.User, error) {

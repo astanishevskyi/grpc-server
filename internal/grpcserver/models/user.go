@@ -8,7 +8,7 @@ type User struct {
 }
 
 type UserService interface {
-	GetAll() []User
+	GetAll() ([]User, error)
 	Retrieve(id uint32) (User, error)
 	Add(name, email string, age uint8) (User, error)
 	Remove(id uint32) (uint32, error)
