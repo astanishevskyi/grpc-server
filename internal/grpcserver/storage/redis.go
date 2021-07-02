@@ -6,27 +6,38 @@ import (
 	"github.com/astanishevskyi/grpc-server/internal/grpcserver/models"
 	"github.com/go-redis/redis/v8"
 	"log"
+	"os"
 	"strconv"
 )
 
 type RedisStorage struct {
-	Addr         string
-	Password     string
-	DB           int
 	RedisStorage *redis.Client
 	lastID       uint32
 }
 
 func NewRedisStorage() *RedisStorage {
+	addr := os.Getenv("REDIS_ADDR")
+	password := os.Getenv("REDIS_PASS")
+	db, err := strconv.Atoi(os.Getenv("REDIS_DB"))
+	if err != nil {
+		log.Fatal(err)
+	}
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     addr,
+		Password: password,
+		DB:       db,
 	})
+	storage := &RedisStorage{RedisStorage: rdb}
+	lastID := storage.getLastID()
+	storage.lastID = lastID
+	return storage
+}
+
+func (r *RedisStorage) getLastID() uint32 {
 	var cursor uint64
 	var lastID uint32
 	for {
-		result, cursor, err := rdb.Scan(context.Background(), cursor, "*", 10).Result()
+		result, cursor, err := r.RedisStorage.Scan(context.Background(), cursor, "*", 10).Result()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -44,7 +55,7 @@ func NewRedisStorage() *RedisStorage {
 			break
 		}
 	}
-	return &RedisStorage{RedisStorage: rdb, lastID: lastID}
+	return lastID
 }
 
 func (r *RedisStorage) GetAll() ([]models.User, error) {
