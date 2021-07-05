@@ -36,8 +36,10 @@ func NewRedisStorage() *RedisStorage {
 func (r *RedisStorage) getLastID() uint32 {
 	var cursor uint64
 	var lastID uint32
+	var err error
+	var result []string
 	for {
-		result, cursor, err := r.RedisStorage.Scan(context.Background(), cursor, "*", 10).Result()
+		result, cursor, err = r.RedisStorage.Scan(context.Background(), cursor, "*", 10).Result()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -46,9 +48,8 @@ func (r *RedisStorage) getLastID() uint32 {
 			if err != nil {
 				log.Fatal(err)
 			}
-
-			if lastID <= uint32(id) {
-				lastID = uint32(id) + 1
+			if lastID < uint32(id) {
+				lastID = uint32(id)
 			}
 		}
 		if cursor == 0 {
@@ -99,6 +100,7 @@ func (r *RedisStorage) Retrieve(id uint32) (models.User, error) {
 }
 
 func (r *RedisStorage) Add(name, email string, age uint8) (models.User, error) {
+	r.lastID++
 	newUser := models.User{
 		ID:    r.lastID,
 		Name:  name,
@@ -113,7 +115,6 @@ func (r *RedisStorage) Add(name, email string, age uint8) (models.User, error) {
 	if err != nil {
 		return models.User{}, err
 	}
-	r.lastID++
 
 	return newUser, nil
 }
@@ -136,7 +137,7 @@ func (r *RedisStorage) Update(id uint32, name, email string, age uint8) (models.
 		return models.User{}, err
 	}
 	newUser := models.User{
-		ID:    r.lastID,
+		ID:    id,
 		Name:  name,
 		Email: email,
 		Age:   age,
@@ -145,7 +146,7 @@ func (r *RedisStorage) Update(id uint32, name, email string, age uint8) (models.
 	if err != nil {
 		return models.User{}, err
 	}
-	err = r.RedisStorage.Set(context.Background(), strconv.Itoa(int(r.lastID)), jsonUser, 0).Err()
+	err = r.RedisStorage.Set(context.Background(), strconv.Itoa(int(id)), jsonUser, 0).Err()
 	if err != nil {
 		return models.User{}, err
 	}
