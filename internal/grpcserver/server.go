@@ -38,13 +38,18 @@ func (s *Server) ConfigStorage() error {
 		s.Storage = inMemoryStorage
 		return nil
 	case "redis":
-		log.Println("Storage is redis")
+		log.Println("Storage is Redis")
 		s.Storage = storage.NewRedisStorage()
 		return nil
 	case "mongo":
-		log.Println("Storage is mongo")
+		log.Println("Storage is Mongo")
 		mongoStorage := storage.NewMongoStorage()
 		s.Storage = mongoStorage
+		return nil
+	case "postgres":
+		log.Println("Storage is PostgreSQL")
+		postgreStorage := storage.NewPostgreStorage()
+		s.Storage = postgreStorage
 		return nil
 	}
 	return errors.New("no storage is set")
