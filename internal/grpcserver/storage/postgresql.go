@@ -8,10 +8,12 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 )
 
 type PostgreStorage struct {
 	db *sql.DB
+	mu sync.Mutex
 }
 
 func NewPostgreStorage() *PostgreStorage {
@@ -70,6 +72,9 @@ func (p *PostgreStorage) Retrieve(id uint32) (models.User, error) {
 
 func (p *PostgreStorage) Add(name, email string, age uint8) (models.User, error) {
 	var id uint32
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	err := p.db.QueryRow(
 		`INSERT INTO "user"(name, email, age) VALUES ($1, $2, $3) RETURNING id`,
 		name,
@@ -85,6 +90,8 @@ func (p *PostgreStorage) Add(name, email string, age uint8) (models.User, error)
 
 func (p *PostgreStorage) Remove(id uint32) (uint32, error) {
 	var _id uint32
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	err := p.db.QueryRow(
 		`DELETE FROM "user" WHERE id=$1 RETURNING id`,
 		id,
@@ -97,6 +104,8 @@ func (p *PostgreStorage) Remove(id uint32) (uint32, error) {
 }
 
 func (p *PostgreStorage) Update(id uint32, name, email string, age uint8) (models.User, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	_, err := p.db.Exec(
 		`UPDATE "user" SET name=$1, email=$2, age=$3 WHERE id=$4 RETURNING id`,
 		name,

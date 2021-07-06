@@ -8,12 +8,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"os"
+	"sync"
 )
 
 type MongoStorage struct {
 	Addr         string
 	Password     string
 	MongoStorage *mongo.Collection
+	mu           sync.Mutex
 	lastID       uint32
 }
 
@@ -33,10 +35,10 @@ func NewMongoStorage() *MongoStorage {
 	return storage
 }
 
-func (r *MongoStorage) getLastID() (uint32, error) {
+func (m *MongoStorage) getLastID() (uint32, error) {
 	var result bson.M
 	opts := options.FindOne().SetSort(bson.D{{"_id", -1}})
-	err := r.MongoStorage.FindOne(context.Background(), bson.D{}, opts).Decode(&result)
+	err := m.MongoStorage.FindOne(context.Background(), bson.D{}, opts).Decode(&result)
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -48,8 +50,10 @@ func (r *MongoStorage) getLastID() (uint32, error) {
 	return id, nil
 }
 
-func (r *MongoStorage) GetAll() ([]models.User, error) {
-	findUsers, err := r.MongoStorage.Find(context.Background(), bson.D{})
+func (m *MongoStorage) GetAll() ([]models.User, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	findUsers, err := m.MongoStorage.Find(context.Background(), bson.D{})
 	if err != nil {
 		return nil, err
 	}
@@ -70,9 +74,9 @@ func (r *MongoStorage) GetAll() ([]models.User, error) {
 	return users, nil
 }
 
-func (r *MongoStorage) Retrieve(id uint32) (models.User, error) {
+func (m *MongoStorage) Retrieve(id uint32) (models.User, error) {
 	var result bson.M
-	err := r.MongoStorage.FindOne(context.Background(), bson.D{{"_id", id}}).Decode(&result)
+	err := m.MongoStorage.FindOne(context.Background(), bson.D{{"_id", id}}).Decode(&result)
 	if err != nil {
 		return models.User{}, err
 	}
@@ -85,13 +89,15 @@ func (r *MongoStorage) Retrieve(id uint32) (models.User, error) {
 	return user, nil
 }
 
-func (r *MongoStorage) Add(name, email string, age uint8) (models.User, error) {
+func (m *MongoStorage) Add(name, email string, age uint8) (models.User, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	newUser := models.User{Name: name, Email: email, Age: age}
-	r.lastID++
-	res, err := r.MongoStorage.InsertOne(
+	m.lastID++
+	res, err := m.MongoStorage.InsertOne(
 		context.Background(),
 		bson.M{
-			"_id":   r.lastID,
+			"_id":   m.lastID,
 			"name":  newUser.Name,
 			"email": newUser.Email,
 			"age":   newUser.Age,
@@ -104,24 +110,27 @@ func (r *MongoStorage) Add(name, email string, age uint8) (models.User, error) {
 	return newUser, nil
 }
 
-func (r *MongoStorage) Remove(id uint32) (uint32, error) {
+func (m *MongoStorage) Remove(id uint32) (uint32, error) {
 	var result bson.M
-	err := r.MongoStorage.FindOneAndDelete(context.Background(), bson.D{{"_id", id}}).Decode(&result)
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	err := m.MongoStorage.FindOneAndDelete(context.Background(), bson.D{{"_id", id}}).Decode(&result)
 	if err != nil {
 		return 0, err
 	}
 	return id, nil
 }
 
-func (r *MongoStorage) Update(id uint32, name, email string, age uint8) (models.User, error) {
+func (m *MongoStorage) Update(id uint32, name, email string, age uint8) (models.User, error) {
 	var result bson.M
-
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	user := bson.D{
 		{"$set", bson.D{{"name", name}}},
 		{"$set", bson.D{{"email", email}}},
 		{"$set", bson.D{{"age", age}}},
 	}
-	err := r.MongoStorage.FindOneAndUpdate(context.Background(), bson.D{{"_id", id}}, user).Decode(&result)
+	err := m.MongoStorage.FindOneAndUpdate(context.Background(), bson.D{{"_id", id}}, user).Decode(&result)
 	if err != nil {
 		return models.User{}, err
 	}

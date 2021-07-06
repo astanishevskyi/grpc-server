@@ -8,11 +8,13 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 )
 
 type RedisStorage struct {
 	RedisStorage *redis.Client
 	lastID       uint32
+	mu           sync.Mutex
 }
 
 func NewRedisStorage() *RedisStorage {
@@ -100,6 +102,8 @@ func (r *RedisStorage) Retrieve(id uint32) (models.User, error) {
 }
 
 func (r *RedisStorage) Add(name, email string, age uint8) (models.User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.lastID++
 	newUser := models.User{
 		ID:    r.lastID,
@@ -120,6 +124,8 @@ func (r *RedisStorage) Add(name, email string, age uint8) (models.User, error) {
 }
 
 func (r *RedisStorage) Remove(id uint32) (uint32, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	err := r.RedisStorage.Get(context.Background(), strconv.Itoa(int(id))).Err()
 	if err != nil {
 		return 0, err
@@ -132,6 +138,8 @@ func (r *RedisStorage) Remove(id uint32) (uint32, error) {
 }
 
 func (r *RedisStorage) Update(id uint32, name, email string, age uint8) (models.User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	err := r.RedisStorage.Get(context.Background(), strconv.Itoa(int(id))).Err()
 	if err != nil {
 		return models.User{}, err
