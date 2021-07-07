@@ -22,7 +22,11 @@ func (s *UserServer) GetUser(_ context.Context, in *pb.UserId) (*pb.UserObject, 
 }
 
 func (s *UserServer) GetUsers(_ *pb.NoneObject, stream pb.User_GetUsersServer) error {
-	for _, user := range s.DB.GetAll() {
+	data, err := s.DB.GetAll()
+	if err != nil {
+		return err
+	}
+	for _, user := range data {
 		if err := stream.Send(&pb.UserObject{Id: user.ID, Age: uint32(user.Age), Name: user.Name, Email: user.Email}); err != nil {
 			return err
 		}
@@ -32,6 +36,7 @@ func (s *UserServer) GetUsers(_ *pb.NoneObject, stream pb.User_GetUsersServer) e
 
 func (s *UserServer) CreateUser(_ context.Context, in *pb.NewUser) (*pb.UserObject, error) {
 	user, err := s.DB.Add(in.GetName(), in.GetEmail(), uint8(in.GetAge()))
+
 	if err != nil {
 		return nil, err
 	}

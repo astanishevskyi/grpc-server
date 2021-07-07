@@ -21,19 +21,42 @@ type Server struct {
 func New(config *configs.Config) *Server {
 	s := &Server{
 		GRPCServer: grpc.NewServer(),
-		Storage:    storage.NewInMemoryUserStorage(),
 		config:     config,
+	}
+	if err := s.ConfigStorage(); err != nil {
+		log.Fatal(err)
 	}
 	pb.RegisterUserServer(s.GRPCServer, &services.UserServer{DB: s.Storage})
 	return s
 }
 
 func (s *Server) ConfigStorage() error {
-	if s.config.Storage == "in-memory" {
+	switch s.config.Storage {
+	case "", "in-memory":
 		log.Println("Storage is in-memory")
 		inMemoryStorage := storage.NewInMemoryUserStorage()
 		s.Storage = inMemoryStorage
 		return nil
+	case "redis":
+		log.Println("Storage is Redis")
+		s.Storage = storage.NewRedisStorage()
+		return nil
+	case "mongo":
+		log.Println("Storage is Mongo")
+		mongoStorage := storage.NewMongoStorage()
+		s.Storage = mongoStorage
+		return nil
+	case "postgres":
+		log.Println("Storage is PostgreSQL")
+		postgreStorage := storage.NewPostgreStorage()
+		s.Storage = postgreStorage
+		return nil
+	case "elastic":
+		log.Println("Storage is Elasticsearch")
+		elasticStorage := storage.NewElasticStorage()
+		s.Storage = elasticStorage
+		return nil
+
 	}
 	return errors.New("no storage is set")
 }

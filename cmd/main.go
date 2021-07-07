@@ -31,8 +31,5 @@ func main() {
 	}
 
 	s := grpcserver.New(&config)
-	if err := s.ConfigStorage(); err != nil {
-		log.Fatal(err)
-	}
 	s.Run()
 }
