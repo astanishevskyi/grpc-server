@@ -75,6 +75,8 @@ func (m *MongoStorage) GetAll() ([]models.User, error) {
 }
 
 func (m *MongoStorage) Retrieve(id uint32) (models.User, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	var result bson.M
 	err := m.MongoStorage.FindOne(context.Background(), bson.D{{"_id", id}}).Decode(&result)
 	if err != nil {
@@ -111,9 +113,9 @@ func (m *MongoStorage) Add(name, email string, age uint8) (models.User, error) {
 }
 
 func (m *MongoStorage) Remove(id uint32) (uint32, error) {
-	var result bson.M
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	var result bson.M
 	err := m.MongoStorage.FindOneAndDelete(context.Background(), bson.D{{"_id", id}}).Decode(&result)
 	if err != nil {
 		return 0, err

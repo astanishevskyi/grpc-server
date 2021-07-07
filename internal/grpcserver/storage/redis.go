@@ -62,6 +62,8 @@ func (r *RedisStorage) getLastID() uint32 {
 }
 
 func (r *RedisStorage) GetAll() ([]models.User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	var cursor uint64
 	var result []models.User
 	for {
@@ -89,6 +91,8 @@ func (r *RedisStorage) GetAll() ([]models.User, error) {
 }
 
 func (r *RedisStorage) Retrieve(id uint32) (models.User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	val, err := r.RedisStorage.Get(context.Background(), strconv.Itoa(int(id))).Result()
 	if err != nil {
 		return models.User{}, err

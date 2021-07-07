@@ -38,6 +38,8 @@ func NewPostgreStorage() *PostgreStorage {
 }
 
 func (p *PostgreStorage) GetAll() ([]models.User, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	rows, err := p.db.Query(`SELECT id, name, email, age FROM "user"`)
 	if err != nil {
 		return nil, err
@@ -58,6 +60,8 @@ func (p *PostgreStorage) GetAll() ([]models.User, error) {
 }
 
 func (p *PostgreStorage) Retrieve(id uint32) (models.User, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	var user models.User
 	err := p.db.QueryRow(
 		`SELECT id, name, email, age FROM "user" WHERE id=$1`,

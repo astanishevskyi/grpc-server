@@ -3,6 +3,7 @@ module github.com/astanishevskyi/grpc-server
 go 1.16
 
 require (
+	github.com/elastic/go-elasticsearch/v7 v7.13.1
 	github.com/go-redis/redis/v8 v8.10.0
 	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.10.2

@@ -51,6 +51,12 @@ func (s *Server) ConfigStorage() error {
 		postgreStorage := storage.NewPostgreStorage()
 		s.Storage = postgreStorage
 		return nil
+	case "elastic":
+		log.Println("Storage is Elasticsearch")
+		elasticStorage := storage.NewElasticStorage()
+		s.Storage = elasticStorage
+		return nil
+
 	}
 	return errors.New("no storage is set")
 }
