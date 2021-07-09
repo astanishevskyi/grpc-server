@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package user;
+option go_package = "github.com/astanishevskyi/grpc-server/pkg/api";
+
+service User {
+    rpc GetUser(UserId) returns (UserObject) {}
+    rpc GetUsers(NoneObject) returns (stream UserObject) {}
+    rpc CreateUser(NewUser) returns (UserObject) {}
+    rpc UpdateUser(UserObject) returns (UserObject) {}
+    rpc DeleteUser(UserId) returns (UserId) {}
+}
+
+message NoneObject{}
+
+message UserId {
+    uint32 id = 1;
+}
+
+message UserObject {
+    uint32 id = 1;
+    uint32 age = 2;
+    string name = 3;
+    string email = 4;
+}
+
+message NewUser {
+    int32 age = 1;
+    string name = 2;
+    string email = 3;
+}
